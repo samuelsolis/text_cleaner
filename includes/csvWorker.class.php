@@ -37,6 +37,8 @@ class csvWorker extends debug{
 
   public function work(){
 
+    $buffer_fields = '';
+
     //foreach file in $input_folder
     while(($this->current_file = array_pop($this->files)) != ''){
 
@@ -50,12 +52,30 @@ class csvWorker extends debug{
       
       $this->debug_message('Created ' . $this->output_folder . '/' . $this->current_file);
 
+      //Ignore first line (Header) and test read
+      if(fgets($input_stream) === FALSE){
+        $this->debug_message('Can\'t read input file.');
+      };
+
       //Read whole file line per line (becouse it can be too large)
       while(($buffer = fgets($input_stream)) !== FALSE){
         $buffer = html_entity_decode($buffer);
         $buffer = strip_tags($buffer);
-        fwrite($output_stream, $buffer);
 
+        //title alwais is the first element
+        if (preg_match('/\[title_field\]/', $buffer) === 1){
+          fwrite($output_stream, $buffer);
+          fwrite($output_stream, $buffer_fields);
+          $buffer_fields = '';
+        }else{
+          $buffer_fields .= $buffer; 
+        }
+      }
+
+      //If not finish with a title fiedl, maybe we have some fields in the buffer. Save it and clean it.
+      if (!empty($buffer_fields)){
+        fwrite($output_stream, $buffer_fields);
+        $buffer_fields = '';
       }
 
       fclose($output_stream);
