@@ -53,10 +53,7 @@ class csvWorker extends debug{
       //Read whole file line per line (becouse it can be too large)
       while(($buffer = fgets($input_stream)) !== FALSE){
         $buffer = html_entity_decode($buffer);
-        $buffer = strip_tags($buffer, '<p><ul><li>');
-        $buffer = preg_replace('/<(_)*(p|ul|li)(_)*>/', '', $buffer);
-        $buffer = preg_replace('/<( )*\/( )*(ul|li)( )*>/', '\r\n', $buffer);
-        $buffer = preg_replace('/<( )*\/( )*(p)( )*>/', '\r\n\r\n', $buffer);
+        $buffer = strip_tags($buffer);
         fwrite($output_stream, $buffer);
 
       }
