@@ -1,3 +1,5 @@
 #ignore input and output folder
 input/*
+!input/example.csv
 output/*
+!output/example.csv
