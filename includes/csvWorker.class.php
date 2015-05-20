@@ -58,42 +58,32 @@ class csvWorker extends debug{
       };
 
       //Read whole file line per line (becouse it can be too large)
+      $buffer_fields = '';
       while(($buffer = fgets($input_stream)) !== FALSE){
         $write = true;
          //title alwais is the first element
         if (preg_match('/\[summary\'/', $buffer)){
-          $write = false;;
+          $write = false;
           $buffer = '';
         }
 
-        //if (preg_match('/\[title_field\]/', $buffer) === 1){
         if($write){
+          //strip known html tags. I don't use strip_tag funcion becouse it cause some errors
+          $buffer = preg_replace('/<( )*(\/)?(p|ul|li|br|strong|em)( )*(\/)?>/', '', $buffer);
+          //Chagne &oacute; and other html char elements for his correct char.
           $buffer = html_entity_decode($buffer);
-          $buffer = strip_tags($buffer);
           fwrite($output_stream, $buffer);
         }
-          //fwrite($output_stream, $buffer_fields);
-          //$buffer_fields = '';
-        //}else{
-        //  $buffer_fields .= $buffer; 
-       // }
       }
-
-      //If not finish with a title fiedl, maybe we have some fields in the buffer. Save it and clean it.
-      //if (!empty($buffer_fields)){
-      //  fwrite($output_stream, $buffer_fields);
-      //  $buffer_fields = '';
-      // }
+      
+      if(!feof($input_stream)){
+        $this->debug_message('Fallo inesperado en fgets()',$this->ERROR);
+      }
 
       fclose($output_stream);
       fclose($input_stream);
     }
   }
-
-  public function finish(){
-  
-  }
-
 
 }
 
