@@ -37,8 +37,6 @@ class csvWorker extends debug{
 
   public function work(){
 
-    $buffer_fields = '';
-
     //foreach file in $input_folder
     while(($this->current_file = array_pop($this->files)) != ''){
 
@@ -53,31 +51,40 @@ class csvWorker extends debug{
       $this->debug_message('Created ' . $this->output_folder . '/' . $this->current_file);
 
       //Ignore first line (Header) and test read
-      if(fgets($input_stream) === FALSE){
+      if(fgetcsv($input_stream) === FALSE){
         $this->debug_message('Can\'t read input file.');
       };
 
       //Read whole file line per line (becouse it can be too large)
-      $buffer_fields = '';
-      while(($buffer = fgets($input_stream)) !== FALSE){
+      $buffer_fields = array();
+      while(($line = fgetcsv($input_stream)) !== FALSE){
+
         $write = true;
-         //title alwais is the first element
-        if (preg_match('/\[summary\'/', $buffer)){
+        if(preg_match('/\[summary\'/', $line[0])){
+          $line = '';
           $write = false;
-          $buffer = '';
         }
 
         if($write){
-          //strip known html tags. I don't use strip_tag funcion becouse it cause some errors
-          $buffer = preg_replace('/<( )*(\/)?(p|ul|li|br|strong|em)( )*(\/)?>/', '', $buffer);
-          //Chagne &oacute; and other html char elements for his correct char.
-          $buffer = html_entity_decode($buffer);
-          fwrite($output_stream, $buffer);
+          //HTML labels
+          $line[1] = preg_replace('/<( )*(\/)?(p|ul|li|br|strong|em|BR|STRONG|P)( )*(\/)?>/', '', $line[1]); 
+          //HTML special chars
+          $line[1] = html_entity_decode($line[1]);
+          //line breaks
+          $line[1] = preg_replace('/( ){4,15}/', '
+', $line[1]);
+
+          //Reorder, always put first the title field
+          if(preg_match('/\[title_field\]/', $line[0])){
+            fputcsv($output_stream, $line);
+            foreach($buffer_fields as $field){
+              fputcsv($output_stream, $field);
+            }
+            $buffer_fields = array();
+          }else{
+            $buffer_fields[] = $line;
+          }
         }
-      }
-      
-      if(!feof($input_stream)){
-        $this->debug_message('Fallo inesperado en fgets()',$this->ERROR);
       }
 
       fclose($output_stream);
